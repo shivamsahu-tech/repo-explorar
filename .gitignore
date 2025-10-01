@@ -1,11 +1,15 @@
+# -------------------------
 # Environment Variables
+# -------------------------
 .env
 .env.local
 .env.development
 .env.staging
 .env.production
 
-# Python
+# -------------------------
+# Python (FastAPI backend)
+# -------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -38,51 +42,95 @@ env.bak/
 venv.bak/
 .venv/
 
-# IDEs
+# -------------------------
+# Node.js (React frontend)
+# -------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-lock.yaml
+
+# React build output
+client/build/
+client/.next/
+client/out/
+
+# -------------------------
+# IDEs & Editors
+# -------------------------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
+# -------------------------
 # Jupyter Notebooks
+# -------------------------
 .ipynb_checkpoints
 
+# -------------------------
 # API Keys & Configs
+# -------------------------
 config.py
 secrets.json
 credentials.json
 *.key
 *.pem
 
+# -------------------------
 # Database
+# -------------------------
 *.db
 *.sqlite3
 
+# -------------------------
 # Logs
+# -------------------------
 *.log
 logs/
 
+# -------------------------
 # Cache
+# -------------------------
 .cache/
 *.cache
+client/.eslintcache
+client/.stylelintcache
 
+# -------------------------
 # OS Files
+# -------------------------
 .DS_Store
 Thumbs.db
 
+# -------------------------
 # Temporary files
+# -------------------------
 *.tmp
 *.temp
 temp/
 
+# -------------------------
 # RAG Specific
+# -------------------------
 vector_store/
 embeddings_cache/
 processed_repos/
 clone_temp/
 
+# -------------------------
 # Model files (if storing locally)
+# -------------------------
 *.bin
 *.safetensors
 models/
+
+
+**/.env*
+client/.env*
+server/.env*
