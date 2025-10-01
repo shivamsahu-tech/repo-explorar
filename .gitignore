@@ -134,3 +134,4 @@ models/
 **/.env*
 client/.env*
 server/.env*
+.env
