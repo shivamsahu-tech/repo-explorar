@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-dotenv
+gitpython
+neo4j
+pinecone
+tree-sitter
+tree-sitter-language-pack
+google-generativeai
+dotenv
