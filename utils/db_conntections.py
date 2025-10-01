@@ -1,6 +1,8 @@
 import os
 from pinecone import Pinecone
 from neo4j import GraphDatabase
+from dotenv import load_dotenv
+load_dotenv()
 
 
 _pc_instance = None
@@ -34,3 +36,22 @@ def get_neo4j_driver():
             auth=(neo4j_username, neo4j_password)
         )
     return __neo4j_driver
+
+
+def cleanup_resources(index_name: str):
+    """Deletes Pinecone index and clears Neo4j database."""
+
+    pc = get_pinecone_connector()
+    try:
+        pc.delete_index(index_name)
+        print(f"[Pinecone] Index '{index_name}' deleted.")
+    except Exception as e:
+        print(f"[Pinecone] Failed to delete index: {e}")
+
+    driver = get_neo4j_driver()
+    try:
+        with driver.session() as session:
+            session.run("MATCH (n) DETACH DELETE n")
+        print("[Neo4j] All nodes and relationships deleted.")
+    except Exception as e:
+        print(f"[Neo4j] Failed to clear graph: {e}")

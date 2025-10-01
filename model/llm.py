@@ -1,14 +1,18 @@
-import google.generativeai as genai
-import os
+from google import genai
 from dotenv import load_dotenv
+import os
+
 load_dotenv()
 
-key = os.getenv("gemini_api_key")
+api_key=os.getenv("LLM_API_KEY")
+client = genai.Client(api_key=api_key)
 
-genai.configure(api_key=key)
-
-def chat(promt): 
-  model = genai.GenerativeModel("gemini-1.5-flash")
-  response = model.generate_content(promt)
+def chat(prompt): 
+  response = client.models.generate_content(
+  model="gemini-2.5-flash",
+  contents=prompt,
+  )
   return response.text
+
+  
 

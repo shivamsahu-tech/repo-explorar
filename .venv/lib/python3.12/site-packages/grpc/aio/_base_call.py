@@ -138,7 +138,7 @@ class Call(RpcContext, metaclass=ABCMeta):
 class UnaryUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    """The abstract base class of a unary-unary RPC on the client-side."""
+    """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
     def __await__(self) -> Generator[Any, None, ResponseType]:
@@ -169,9 +169,6 @@ class UnaryStreamCall(
         Read operations must be serialized when called from multiple
         coroutines.
 
-        Note that the iterator and read/write APIs may not be mixed on
-        a single RPC.
-
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
@@ -184,9 +181,6 @@ class StreamUnaryCall(
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
-
-        Note that the iterator and read/write APIs may not be mixed on
-        a single RPC.
 
         Raises:
           An RpcError exception if the write failed.
@@ -229,9 +223,6 @@ class StreamStreamCall(
         Read operations must be serialized when called from multiple
         coroutines.
 
-        Note that the iterator and read/write APIs may not be mixed on
-        a single RPC.
-
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
@@ -240,9 +231,6 @@ class StreamStreamCall(
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
-
-        Note that the iterator and read/write APIs may not be mixed on
-        a single RPC.
 
         Raises:
           An RpcError exception if the write failed.

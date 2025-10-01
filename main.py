@@ -11,9 +11,19 @@ from utils.retrieval import search_code
 from template.prompt import get_prompt
 from model.llm import chat
 from template.query_optimization import get_optimized_query
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Codebase RAG Service")
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],         
+    allow_credentials=True,
+    allow_methods=["*"],            
+    allow_headers=["*"],            
+)
+
 
 class RepoRequest(BaseModel):
     github_url: str
@@ -39,24 +49,16 @@ async def process_repo(req: RepoRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
-# @app.post("/delete-index")
-# async def delete_index(req: deleteIndexRequest):
-#     try:
-#         index_name=req.index_name
-#         pc=get_pinecone_connector()
-#         pc.delete_index(index_name)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e)) 
     
 
 @app.post("/chat-with-codebase")
 async def chat_with_codebase(req: chatRequest):
     print("Chat with codebase called")
+    print(req.index_name, "  ", req.query_text)
     try:
-        optimized_query=get_optimized_query(req.query_text)
-        context=search_code(optimized_query, req.index_name)
+        # optimized_query=get_optimized_query(req.query_text)
+        context=search_code(req.query_text, req.index_name)
+        # print("context ", context)
         prompt=get_prompt(context, req.query_text)
         print(prompt)
         llm_response=chat(prompt)

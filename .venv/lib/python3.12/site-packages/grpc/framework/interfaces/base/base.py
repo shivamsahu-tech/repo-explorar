@@ -83,7 +83,7 @@ class Completion(abc.ABC):
     """An aggregate of the values exchanged upon operation completion.
 
     Attributes:
-      terminal_metadata: A terminal metadata value for the operation.
+      terminal_metadata: A terminal metadata value for the operaton.
       code: A code value for the operation.
       message: A message value for the operation.
     """

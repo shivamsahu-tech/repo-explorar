@@ -1,5 +1,5 @@
 from typing import List, Dict
-import logging
+import logging, threading
 from utils.embedding import get_embeddings
 from utils.db_conntections import get_neo4j_driver, get_pinecone_connector
 from pinecone import ServerlessSpec
@@ -51,15 +51,6 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
         logging.error(f"Failed to store nodes in Neo4j for session {session_id}. Error: {e}")
 
 
-
-
-
-
-
-
-
-        
-
 def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
     """Store node embeddings in Pinecone with error handling."""
     if not nodes:
@@ -68,7 +59,7 @@ def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
     
     try:
         # Create embeddings and get the dimension
-        texts = [f"{n['name']} {n['text'][:200]}" for n in nodes]
+        texts = [f"{n['name']} {n['text'][:2000]}" for n in nodes]
         # Assume get_embeddings returns a list of vectors (e.g., [[...],[...]])
         embeddings = get_embeddings(texts)
         dimension = 384
@@ -122,6 +113,44 @@ def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
 
 
 
+def cleanup_session(session_id: str, index_name: str):
+    """
+    Delete all nodes/relationships in Neo4j for a session
+    and delete the corresponding Pinecone index.
+    """
+    # --- Neo4j cleanup ---
+    try:
+        driver = get_neo4j_driver()
+        with driver.session() as session:
+            session.run("""
+                MATCH (n:CodeNode {session_id: $session_id})
+                DETACH DELETE n
+            """, session_id=session_id)
+        print(f"[Neo4j] Cleared all nodes for session: {session_id}")
+    except Exception as e:
+        print(f"[Neo4j] Failed to clear session {session_id}: {e}")
+
+    # --- Pinecone cleanup ---
+    try:
+        pc = get_pinecone_connector()
+        if index_name in pc.list_indexes():
+            pc.delete_index(index_name)
+            print(f"[Pinecone] Index '{index_name}' deleted.")
+        else:
+            print(f"[Pinecone] Index '{index_name}' does not exist.")
+    except Exception as e:
+        print(f"[Pinecone] Failed to delete index {index_name}: {e}")
+
+
+
+def schedule_session_cleanup(session_id: str, index_name: str, delay: int = 200):
+    """
+    Schedule automatic cleanup after `delay` seconds (default = 10 min).
+    """
+    timer = threading.Timer(delay, cleanup_session, args=(session_id, index_name))
+    timer.daemon = True 
+    timer.start()
+    print(f"[Scheduler] Cleanup scheduled for session {session_id} in {delay//60} minutes.")
 
 
 
@@ -161,70 +190,3 @@ def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
 
 
 
-
-
-# from typing import List, Dict
-# from utils.embedding import get_embeddings
-# from utils.db_conntections import get_neo4j_driver, get_pinecone_connector
-# from pinecone import ServerlessSpec
-
-
-
-# neo4j_driver = get_neo4j_driver()
-# pc = get_pinecone_connector()
-
-
-# def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
-#     with neo4j_driver.session() as session:
-#         # Batch create all nodes
-#         session.run("""
-#             UNWIND $nodes as node
-#             CREATE (n:CodeNode {
-#                 id: node.id, type: node.type, name: node.name, 
-#                 file: node.file, start_line: node.start_line, 
-#                 session_id: $session_id
-#             })
-#         """, nodes=nodes, session_id=session_id)
-        
-#         # Batch create relationships with better matching
-#         session.run("""
-#             MATCH (caller:CodeNode {session_id: $session_id, type: 'FUNCTION'})
-#             MATCH (call:CodeNode {session_id: $session_id, type: 'CALL'})
-#             MATCH (target:CodeNode {session_id: $session_id, type: 'FUNCTION'})
-#             WHERE call.file = caller.file 
-#             AND caller.start_line <= call.start_line <= caller.end_line
-#             AND call.name = target.name
-#             CREATE (caller)-[:CALLS]->(target)
-#         """, session_id=session_id)
-        
-
-# def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
-#     """Store node embeddings in Pinecone"""
-#     if not nodes:
-#         return
-    
-#     # Create embeddings
-#     texts = [f"{n['name']} {n['text'][:200]}" for n in nodes]
-#     embeddings = get_embeddings(texts)
-    
-#     # Create vectors
-#     vectors = []
-#     for node, embedding in zip(nodes, embeddings):
-#         vectors.append({
-#             'id': node['id'],
-#             'values': embedding,
-#             'metadata': {
-#                 'name': node['name'],
-#                 'type': node['type'],
-#                 'file': node['file'],
-#                 'language': node['language']
-#             }
-#         })
-    
-#     pc.create_index(
-#                 name=index_name,
-#                 dimension=384,
-#                 metric="cosine",
-#                 spec=ServerlessSpec(cloud="aws", region="us-east-1")
-#             )
-#     pc.upsert_vectors(index_name, vectors)

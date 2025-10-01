@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import grpc
 from grpc import _common
@@ -53,11 +53,10 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                error_msg = (
-                    "Interceptor must be ServerInterceptor,"
-                    "the following are invalid: {invalid_interceptors}"
+                raise ValueError(
+                    "Interceptor must be ServerInterceptor, the "
+                    f"following are invalid: {invalid_interceptors}"
                 )
-                raise ValueError(error_msg)
         self._server = cygrpc.AioServer(
             self._loop,
             thread_pool,
@@ -79,14 +78,6 @@ class Server(_base_server.Server):
           used to service RPCs.
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
-
-    def add_registered_method_handlers(
-        self,
-        service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
-    ) -> None:
-        # TODO(xuanwn): Implement this for AsyncIO.
-        pass
 
     def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
@@ -140,12 +131,11 @@ class Server(_base_server.Server):
         This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, this method waits until all active
-        RPCs are finished or until the grace period is reached. RPCs that haven't
-        been terminated within the grace period are aborted.
-        If a grace period is not specified (by passing None for grace), all
-        existing RPCs are aborted immediately and this method blocks until
-        the last RPC handler terminates.
+        If a grace period is specified, this method returns immediately and all
+        RPCs active at the end of the grace period are aborted. If a grace
+        period is not specified (by passing None for grace), all existing RPCs
+        are aborted immediately and this method blocks until the last RPC
+        handler terminates.
 
         This method is idempotent and may be called at any time. Passing a
         smaller grace value in a subsequent call will have the effect of
