@@ -22,7 +22,7 @@ def chat(prompt):
 
 
 
-print(chat("Write a python function to add two numbers"))
+# print(chat("Write a python function to add two numbers"))
 
 
 
