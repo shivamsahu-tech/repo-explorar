@@ -10,7 +10,7 @@
 # api_key = os.getenv("EMBEDDING_API_KEY")
 # def get_embeddings(chunks):
 #     response = requests.post(
-#         "http://localhost:8001/embed",
+#         "http://localhost:8001/embed/qodo",
 #         json={"chunks": chunks},
 #         headers={"Content-Type": "application/json"}
 #     )
