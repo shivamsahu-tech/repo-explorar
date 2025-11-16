@@ -51,7 +51,7 @@ export default function Landing({repoUrl, setRepoUrl, processRepo}) {
             }`}>
               <a href="#about" className="text-gray-300 hover:text-white transition-colors duration-300 hover:glow">About</a>
               <a href="#features" className="text-gray-300 hover:text-white transition-colors duration-300 hover:glow">Features</a>
-              <a href="https://github.com/shivamsahu-tech/repo-explorar" className="text-gray-300 hover:text-white transition-colors duration-300 hover:glow"><Github/></a>
+              <a href="https://github.com/shivamsahu-tech/coderag-ai" className="text-gray-300 hover:text-white transition-colors duration-300 hover:glow"><Github/></a>
             </div>
           </div>
         </div>
@@ -256,7 +256,7 @@ Would you like me to show you the specific implementation details?</div>
               <span>Get Started Free</span>
               <Zap className="h-5 w-5 animate-bounce" />
             </button>
-            <a href='https://github.com/shivamsahu-tech/repo-explorar/blob/main/README.md' className="border border-gray-600 hover:border-blue-500 text-gray-300 hover:text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
+            <a href='https://github.com/shivamsahu-tech/coderag-ai/blob/main/README.md' className="border border-gray-600 hover:border-blue-500 text-gray-300 hover:text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20">
               View Documentation
             </a>
           </div>
@@ -279,7 +279,7 @@ Would you like me to show you the specific implementation details?</div>
                 Understand any repository instantly.
               </p>
               <div className="flex space-x-4">
-                <a href='https://github.com/shivamsahu-tech/repo-explorar' className="text-gray-400 hover:text-white transition-colors duration-300 hover:scale-110 transform">
+                <a href='https://github.com/shivamsahu-tech/coderag-ai' className="text-gray-400 hover:text-white transition-colors duration-300 hover:scale-110 transform">
                   <Github className="h-5 w-5" />
                 </a>
                 <button className="text-gray-400 hover:text-white transition-colors duration-300 hover:scale-110 transform">
