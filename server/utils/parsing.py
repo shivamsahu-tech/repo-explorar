@@ -4,8 +4,6 @@ from typing import List, Dict, Set, Optional, Tuple
 from tree_sitter_language_pack import get_parser as get_lang_parser
 
 
-IGNORE_DIRS = {'.git', 'node_modules', '__pycache__', '.venv', 'dist', 'build', '.next', 'coverage'}
-LANGUAGES = {'py': 'python', 'js': 'javascript', 'ts': 'typescript', 'jsx': 'javascript', 'tsx': 'typescript'}
 
 # Consolidated configuration
 CONFIG = {
@@ -154,7 +152,6 @@ def extract_nodes_from_file(file_path: str, language: str) -> List[Dict]:
     tree = parser.parse(code)
     nodes = []
     
-    # Create file-level context node
     imports = extract_patterns(code_str, language, 'imports')
     comments = extract_patterns(code_str, language, 'comments')
     
@@ -190,6 +187,7 @@ def extract_nodes_from_file(file_path: str, language: str) -> List[Dict]:
     
     traverse(tree.root_node)
     return nodes
+
 
 
 def chunk_text(text, chunk_size=1000, overlap=100):
