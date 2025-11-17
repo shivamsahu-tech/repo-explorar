@@ -1,15 +1,19 @@
 from core.logging import get_logger
 from services.ingest.repo_handler import clone_repo, cleanup_repo
-from ingest.file_traversal import extract_all_nodes
-from ingest.storage import store_nodes_in_neo4j, store_nodes_in_pinecone
+from services.ingest.file_traversal import extract_all_nodes
+from services.ingest.storage import store_nodes_in_neo4j, store_nodes_in_pinecone
+import uuid
 
 logger = get_logger(__name__)
 
 def run_ingest_pipeline(repo_url: str):
-    session_id, repo_path = clone_repo(repo_url)
-
+    # session_id, repo_path = clone_repo(repo_url)
+    repo_path = "data/repos/f18d2f57-cf74-46a8-9ff0-850c3e2936ab"
+    print(repo_path)
+    all_nodes = extract_all_nodes(repo_path)
+    session_id = str(uuid.uuid4())
+    print(session_id)
     try:
-        all_nodes = extract_all_nodes(repo_path)
         if not all_nodes:
             print("No nodes found")
             return session_id
@@ -18,12 +22,13 @@ def run_ingest_pipeline(repo_url: str):
 
         store_nodes_in_neo4j(all_nodes, session_id)
         logger.info("Stored nodes in neo4j")
-        store_nodes_in_pinecone(all_nodes, index_name)
-        logger.info("Stored vectors in pinecone")
-        return index_name
+        # store_nodes_in_pinecone(all_nodes, index_name)
+        # logger.info("Stored vectors in pinecone")
+        return all_nodes
         
     finally:
-        cleanup_repo(repo_path)
+        print("done")
+        # cleanup_repo(repo_path)
 
 
 

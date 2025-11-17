@@ -155,6 +155,7 @@ def extract_nodes_from_file(file_path: str, language: str) -> List[Dict]:
     imports = extract_patterns(code_str, language, 'imports')
     comments = extract_patterns(code_str, language, 'comments')
     
+    
     file_node = {
         'id': f"{file_path}:FILE",
         'type': 'FILE',
