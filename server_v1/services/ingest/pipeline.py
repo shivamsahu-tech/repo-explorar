@@ -1,8 +1,9 @@
 from core.logging import get_logger
 from services.ingest.repo_handler import clone_repo, cleanup_repo
 from services.ingest.file_traversal import extract_all_nodes
-from services.ingest.storage import store_nodes_in_neo4j, store_nodes_in_pinecone
+from services.ingest.storage import store_nodes_in_neo4j
 import uuid
+from fastapi import HTTPException
 
 logger = get_logger(__name__)
 
@@ -17,17 +18,19 @@ def run_ingest_pipeline(repo_url: str):
         if not all_nodes:
             print("No nodes found")
             return session_id
-        # analyze_nodes_structure(all_nodes)
-        index_name = f"repo-{session_id}"
 
         store_nodes_in_neo4j(all_nodes, session_id)
         logger.info("Stored nodes in neo4j")
-        # store_nodes_in_pinecone(all_nodes, index_name)
-        # logger.info("Stored vectors in pinecone")
-        return all_nodes
+        return {
+            "session_id" : session_id,
+            "all_nodes" : all_nodes,
+        }
         
-    finally:
-        print("done")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Issue in embedding or storage"
+        )
         # cleanup_repo(repo_path)
 
 

@@ -7,14 +7,14 @@ from services.retreive.pipeline import run_retreival_pipeline
 router = APIRouter()
 
 class RetreivalRequest(BaseModel):
-    index_name: str
+    session_id: str
     query: str
 
 
 @router.post("/")
 async def retreive_answer(request: RetreivalRequest):
-    answer = run_retreival_pipeline(
-        index_name=request.index_name,
-        query=request.query
+    llm_response = run_retreival_pipeline(
+        request.session_id,
+        request.query
     )
-    return {"status" : "success", "answer" : answer}
+    return {"status" : "success", "llm_response" : llm_response}

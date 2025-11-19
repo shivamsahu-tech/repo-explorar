@@ -1,60 +1,72 @@
 # This file was edited to switch from a local embedding service to using Google Gemini for embeddings.
 # The previous implementation using a local service is commented out below for reference.
-
-
-# import requests, os
-# from dotenv import load_dotenv
-
-# load_dotenv() 
-
-# api_key = os.getenv("EMBEDDING_API_KEY")
-# def get_embeddings(chunks):
-#     response = requests.post(
-#         "http://localhost:8001/embed/qodo",
-#         json={"chunks": chunks},
-#         headers={"Content-Type": "application/json"}
-#     )
-#     response.raise_for_status()
-#     return response.json()["embeddings"]
-
-
-
-
 import google.generativeai as genai 
 from dotenv import load_dotenv
-import os
+import os, requests
+from core.logging import get_logger
+from fastapi import HTTPException
+import time
+
+logger = get_logger(__name__)
 
 load_dotenv()
 
-
-
-genai.configure(api_key=os.getenv("LLM_API_KEY"))
-
 if not os.getenv("LLM_API_KEY"):
     raise ValueError("Gemini API key not found. Please set the GEMINI_API_KEY environment variable.")
+genai.configure(api_key=os.getenv("LLM_API_KEY"))
 
-model_id = "gemini-embedding-001"
+vector_dim = int(os.getenv("VECTOR_DIMENSION") or 384)
 
 def get_embeddings(chunks: list[str]) -> list[list[float]]:
+    logger.info(f"got chunks of size {len(chunks)} for embedding")
+    if len(chunks) == 1:
+        task_type="CODE_RETRIEVAL_QUERY"
+    else:
+        task_type="RETRIEVAL_DOCUMENT"
 
-    try:
-        response = genai.embed_content(
-            model=model_id,
-            content=chunks,
-            task_type="RETRIEVAL_DOCUMENT" ,
-            output_dimensionality=384 
-        )
+    embedding_result = []
+    bundle_size = 100
 
-        return response['embedding']
+    for i in range(0, len(chunks), bundle_size):
+        bundle_chunks = chunks[i:i+bundle_size]
 
-    except Exception as e:
-        print(f"An error occurred during embedding: {e}")
-        return []
+        try:
+            response = genai.embed_content(
+                model="gemini-embedding-001",
+                content=bundle_chunks,
+                task_type=task_type ,
+                output_dimensionality=vector_dim 
+            )
+            logger.info(f"embedding successfull for {i} : {i+bundle_size}")
+            if i+bundle_size < len(chunks):
+                logger.info("sleeping for 61")
+                time.sleep(61)
+                logger.info("waked up!!")
+            embedding_result.extend(response['embedding'])
+        
+        except Exception as e:
+            logger.error(f"An error occurred during embedding: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to embed the chunks | Error : {e}"
+            )
     
+    return embedding_result
 
 
 
-# # Example usage:# c
+# default dimension is 384
+def get_embeddings_local(chunks):
+    response = requests.post(
+        "http://localhost:8001/embed",
+        json={"chunks": chunks},
+        headers={"Content-Type": "application/json"}
+    )
+    response.raise_for_status()
+    return response.json()["embeddings"]
+
+
+# Example usage:# c
 # chunks = ["This is a sample text.", "Another piece of text."]
 # embeddings = get_embeddings(chunks)
 # print(embeddings)

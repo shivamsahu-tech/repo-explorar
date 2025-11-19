@@ -2,16 +2,11 @@ from typing import List, Dict
 from core.logging import get_logger
 from services.llm.embedding import get_embeddings
 from db.neo4j_client import get_neo4j_driver
-from db.pinecone_client import get_pinecone_connector
-from pinecone import ServerlessSpec
 from fastapi import HTTPException
-import json # Added to handle serialization of the neighbors list
 
 logger = get_logger(__name__)
 
-neo4j_driver = get_neo4j_driver() # get_neo4j_driver() 
-pc = None # get_pinecone_connector()
-
+neo4j_driver = get_neo4j_driver()
 
 def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
 
@@ -20,14 +15,13 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
         return
 
     flattened = []
-    relationship_edges = []  # store edges separately
+    relationship_edges = [] 
 
     for node in nodes:
         node_id = node.get("id")
         meta = node.get("metadata", {})
         rels = node.get("relationships", {})
 
-        # Collect flattened node
         flattened.append({
             "id": node.get("id"),
             "name": node.get("name") or node.get("ast_type"),
@@ -40,26 +34,20 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
             "start_byte": node.get("start_byte"),
             "end_byte": node.get("end_byte"),
             "size": node.get("size"),
-
-            # metadata flattened
             "depth": meta.get("depth"),
             "calls": meta.get("calls", []),
-            "inherits": meta.get("inherits", []),
             "type_references": meta.get("type_references", []),
             "is_definition": meta.get("is_definition"),
             "definition_type": meta.get("definition_type"),
         })
 
-        # Collect relationship edges in (source, target, type) format
-        for rel_type, targets in rels.items():
-            # Special handling for imports_from
-            if rel_type == "imports_from":
-                for imp in targets:
-                    # Skip external imports
+        # Resolving the imports and creating relationship list
+        for keys, values in rels.items():
+            if keys == "imports_from":
+                for imp in values:
                     if imp.get("is_external"):
                         continue
 
-                    # resolved_node_ids contains actual nodes in graph
                     resolved_ids = imp.get("resolved_node_ids", [])
                     for tid in resolved_ids:
                         relationship_edges.append({
@@ -69,21 +57,44 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
                         })
                 continue
 
-            # Normal relationships (list of IDs)
-            if isinstance(targets, list):
-                for tid in targets:
+            if isinstance(values, list):
+                for tid in values:
                     relationship_edges.append({
                         "source": node_id,
                         "target": tid,
-                        "type": rel_type.upper()
+                        "type": keys.upper()
                     })
 
     try:
-        with neo4j_driver.session() as session:
+        # preparing text chunk for embedding
+        text_chunks = []
+        for node_data in flattened:
+            text_parts = []
+            if node_data.get("name"):
+                text_parts.append(f"Name: {node_data['name']}")
+            if node_data.get("ast_type"):
+                text_parts.append(f"Type: {node_data['ast_type']}")
+            if node_data.get("code_str"):
+                text_parts.append(f"Code: {node_data['code_str']}")
+            if node_data.get("file"):
+                text_parts.append(f"File: {node_data['file']}")
+            
+            text_chunk = " | ".join(text_parts)
+            text_chunks.append(text_chunk)
+        
+        logger.info(f"Generating embeddings for {len(text_chunks)} nodes...")
+        embeddings = get_embeddings(text_chunks)
+        
+        if embeddings and len(embeddings) == len(flattened):
+            for i, node_data in enumerate(flattened):
+                node_data["embedding"] = embeddings[i]
+            logger.info("Embeddings generated successfully.")
+        else:
+            logger.warning("Failed to generate embeddings or count mismatch. Storing nodes without embeddings.")
 
-            # -------------------------------------
-            # 1. Create nodes
-            # -------------------------------------
+        # Starting storage process
+        with neo4j_driver.session() as session:
+            
             session.run(
                 """
                 UNWIND $nodes AS node
@@ -105,9 +116,24 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
                 session_id=session_id
             )
 
-            # -------------------------------------
-            # 2. Create dynamic relationships
-            # -------------------------------------
+            # Create vector index (run once)
+            try:
+                session.run(
+                    """
+                    CREATE VECTOR INDEX code_embeddings IF NOT EXISTS
+                    FOR (n:CodeNode)
+                    ON n.embedding
+                    OPTIONS {indexConfig: {
+                        `vector.dimensions`: 768,
+                        `vector.similarity_function`: 'cosine'
+                    }}
+                    """
+                )
+                logger.info("Vector index created or already exists.")
+            except Exception as e:
+                logger.warning(f"Vector index creation warning (may already exist): {e}")
+
+            # Create dynamic relationships
             session.run(
                 """
                 UNWIND $edges AS edge
@@ -120,72 +146,10 @@ def store_nodes_in_neo4j(nodes: List[Dict], session_id: str):
                 session_id=session_id
             )
 
-            logger.info("Stored nodes + all relationship types successfully.")
+            logger.info("Stored nodes + embeddings + all relationship types successfully.")
 
     except Exception as e:
-        logger.error(f"Neo4j storage error: {e}")
-        raise
-
-
-
-def store_nodes_in_pinecone(nodes: List[Dict], index_name: str):
-    """Store node embeddings in Pinecone with error handling."""
-    if not nodes:
-        logger.warning("No nodes to store in Pinecone. Skipping.")
-        return
-    
-    # 1. Prepare Text for Embedding (Add context: name + chunk content)
-    # We must try to infer a name for non-function/class nodes (like expression_statement)
-    texts = []
-    vectors_to_upsert = []
-    
-    for node in nodes:
-        node_name = node.get('name') or node.get('ast_type', 'Code Chunk')
-        # Use node type and file path as context for embedding (better retrieval)
-        context = f"File: {os.path.basename(node.get('file', ''))}, Type: {node.get('ast_type', 'chunk')}. "
-        texts.append(context + node.get('text', '')[:2000])
-
-    try:
-        # 2. Create embeddings and get the dimension
-        # NOTE: get_embeddings is mocked here. Assuming it returns [[...], [...]]
-        embeddings = get_embeddings(texts) 
-        dimension = len(embeddings[0]) if embeddings and embeddings[0] else 384
-        
-        # 3. Format data for Pinecone upsert
-        for i, node in enumerate(nodes):
-            vector_id = node.get('id', f"node_{i}")
-            vector_values = embeddings[i]
-            
-            # Metadata for filtering/retrieval (essential for RAG)
-            metadata = {
-                "file": node.get('file', 'unknown'),
-                "ast_type": node.get('ast_type', 'unknown'),
-                "language": node.get('language', 'unknown'),
-                "start_line": node.get('start_line', 0),
-                "text": node.get('text', '')[:500] # store summary text
-            }
-            vectors_to_upsert.append((vector_id, vector_values, metadata))
-
-        # 4. Index Creation and Upsert
-        if index_name not in pc.list_indexes():
-            logger.info(f"Creating Pinecone index '{index_name}'...")
-            pc.create_index(
-                name=index_name,
-                dimension=dimension, 
-                metric="cosine",
-                spec=ServerlessSpec(cloud="aws", region="us-east-1")
-            )   
-            logger.info("Created Pinecone index.")
-        else:
-            logger.info(f"Index '{index_name}' already exists. Skipping creation.")
-
-        index = pc.Index(index_name)
-        index.upsert(vectors=vectors_to_upsert, timeout=15)
-        logger.info(f"Upsert Successful! Total vectors: {len(vectors_to_upsert)}")
-
-    except Exception as e:
-        logger.error(f"Pinecone API error during vector upsert or index creation. Error: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Vector Database operation failed. Error: {str(e)}"
+            detail=f"Issue in neo4j storage | Error {e}"
         )
