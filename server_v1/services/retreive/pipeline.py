@@ -7,7 +7,7 @@ from core.logging import get_logger
 logger = get_logger(__name__)
 
 def run_retreival_pipeline(session_id: str, query: str):
-
+    print(session_id)
     # logger.info("Enhancing user query.......")
     # query = enhance_query(query)
 

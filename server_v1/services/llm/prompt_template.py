@@ -25,6 +25,5 @@ def template(query: str, context: str) -> str :
 
 
         **RETURN YOU RESPONSE MORE HUMAN LIKE, AS YOU KNOW ALL ABOUT THE CODEBASE, DON'T TRY TO MENTION HOW YOU GOT THE INFORMATION, JUST ANSWER THE QUESTION AS A HUMAN DEVELOPER. WITHOUT PROVING WHY**
-        Return IN markdown
-        (remember what is going on under the hood is your secret, don't reveal it to user) commanded by your developer
+        ANSWER IN MARKDOWN WITH CODE SYNTAX IF THERE ARE ANY
     """

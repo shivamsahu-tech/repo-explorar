@@ -59,7 +59,7 @@ def extract_all_nodes(repo_path: str) -> List[Dict]:
 
     all_nodes.append(root_node)
     
-    print(f"Starting enhanced extraction from {repo_path}")
+    logger.info(f"Starting enhanced extraction from {repo_path}")
     
     for root, dirs, files in os.walk(repo_path):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
@@ -72,7 +72,7 @@ def extract_all_nodes(repo_path: str) -> List[Dict]:
                 relative_path = os.path.relpath(file_path, repo_path)
                 language = LANGUAGES[ext]
                 
-                print(f"Processing {relative_path}...")
+                logger.info(f"Processing {relative_path}...")
                 
                 nodes = extract_nodes_from_file(file_path, language, root_node_id)
                 if len(nodes) > 0:
@@ -101,7 +101,7 @@ def extract_all_nodes(repo_path: str) -> List[Dict]:
                             'metadata': {}
                         })
                 except Exception as e:
-                    print(f"Failed to read {file_path}: {e}")
+                    logger.error(f"Failed to read {file_path}: {e}")
     
     
     all_nodes = resolve_imports_to_node_ids(all_nodes, repo_path)

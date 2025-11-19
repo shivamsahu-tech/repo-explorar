@@ -19,10 +19,10 @@ vector_dim = int(os.getenv("VECTOR_DIMENSION") or 384)
 
 def get_embeddings(chunks: list[str]) -> list[list[float]]:
     logger.info(f"got chunks of size {len(chunks)} for embedding")
-    if len(chunks) == 1:
-        task_type="CODE_RETRIEVAL_QUERY"
-    else:
-        task_type="RETRIEVAL_DOCUMENT"
+    # if len(chunks) == 1:
+    #     task_type="CODE_RETRIEVAL_QUERY"
+    # else:
+    #     task_type="RETRIEVAL_DOCUMENT"
 
     embedding_result = []
     bundle_size = 100
@@ -34,7 +34,7 @@ def get_embeddings(chunks: list[str]) -> list[list[float]]:
             response = genai.embed_content(
                 model="gemini-embedding-001",
                 content=bundle_chunks,
-                task_type=task_type ,
+                task_type="RETRIEVAL_DOCUMENT" ,
                 output_dimensionality=vector_dim 
             )
             logger.info(f"embedding successfull for {i} : {i+bundle_size}")
@@ -48,7 +48,7 @@ def get_embeddings(chunks: list[str]) -> list[list[float]]:
             logger.error(f"An error occurred during embedding: {e}")
             raise HTTPException(
                 status_code=500,
-                detail="Failed to embed the chunks | Error : {e}"
+                detail=f"Failed to embed the chunks | Error : {e}"
             )
     
     return embedding_result

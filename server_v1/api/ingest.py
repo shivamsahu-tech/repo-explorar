@@ -11,5 +11,5 @@ class IngestRequest(BaseModel):
 
 @router.post("/")
 async def ingest_repo(request: IngestRequest):
-    index_name = run_ingest_pipeline(request.repo_url)
-    return {"status" : "success", "nodes" : index_name}
+    session_id = run_ingest_pipeline(request.repo_url)
+    return {"status" : "success", "session_id" : session_id}
