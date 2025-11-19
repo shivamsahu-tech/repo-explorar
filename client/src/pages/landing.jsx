@@ -1,14 +1,58 @@
-import { Code, Database, Github, MessageCircle, Zap } from 'lucide-react';
+import { Code, Database, Github, MessageCircle, Zap, MessageSquare, Hash, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import LoadingPage from './Loading';
+import { useNavigate } from 'react-router-dom';
 
-export default function Landing({repoUrl, setRepoUrl, processRepo}) {
+export default function Landing() {
   const [isVisible, setIsVisible] = useState(false);
+  const [repoUrl, setRepoUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("")
+  const navigate = useNavigate()
+
+
+  const joinSession = () => {
+    navigate(`/chat/${sessionId}`)
+  }
+
+  const processRepo = async () => {
+    if (!repoUrl) return;
+    setIsLoading(true);
+    try {
+      const url = `${import.meta.env.VITE_SERVER_URL}/api/ingest`
+      const result = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ repo_url: repoUrl })
+      });
+
+      const res = await result.json();
+
+      if (result.ok && res.status === "success") {
+        console.log("Repo processed");
+        console.log("res : ", res)
+        setSessionId(res.session_id)
+      } else {
+        console.error("Error processing repo:", res.detail);
+        alert(`Please try again or contact with the maintainer | Error : ${res.detail}`);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Server not reachable!");
+      setIsLoading(false);
+    } 
+  };
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
   return (
+    isLoading ? (
+      <LoadingPage sessionId={sessionId} />
+    ) : (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
       {/* Animated Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#374151_1px,transparent_1px),linear-gradient(to_bottom,#374151_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] animate-pulse"></div>
@@ -95,35 +139,101 @@ export default function Landing({repoUrl, setRepoUrl, processRepo}) {
             ))}
           </div>
 
-          {/* Input Form */}
-          <div className={`max-w-2xl mx-auto transform transition-all duration-1000 delay-1200 ${
-            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-          }`}>
-            <div className="space-y-4">
-              <div className="relative group">
-                <Github className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-blue-400 transition-colors duration-300" />
-                <input
-                  type="url"
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
-                  placeholder="Enter GitHub repository URL (e.g., https://github.com/user/repo)"
-                  className="w-full pl-12 pr-4 py-4 text-lg border border-gray-600 bg-gray-800/50 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10"
-                  // onClick={() => processRepo()}
-                />
-              </div>
-              <button
-                onClick={processRepo}
-                disabled={!repoUrl.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-4 px-8 rounded-xl transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-2xl hover:shadow-blue-500/25 animate-pulse-slow"
-              >
-                <Zap className="h-5 w-5 animate-bounce" />
-                <span>Generate AI Assistant</span>
-              </button>
-            </div>
-            <p className="text-sm text-gray-400 mt-4 animate-fade-in-up">
-              Your repository will be analyzed securely. We don't store your code permanently.
-            </p>
-          </div>
+     
+
+
+
+
+
+
+{/* Input Form */}
+<div className={`max-w-4xl mx-auto transform transition-all duration-1000 delay-1200 ${
+  isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+}`}>
+  <div className="grid md:grid-cols-2 gap-6">
+    {/* Create New Session */}
+    <div className="space-y-4 p-6 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+      <div className="flex items-center space-x-2 mb-4">
+        <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+          <Github className="h-5 w-5 text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Create New Session</h3>
+          <p className="text-xs text-gray-400">Start with a GitHub repository</p>
+        </div>
+      </div>
+      
+      <div className="relative group">
+        <Github className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-blue-400 transition-colors duration-300" />
+        <input
+          type="url"
+          value={repoUrl}
+          onChange={(e) => setRepoUrl(e.target.value)}
+          placeholder="https://github.com/user/repo"
+          className="w-full pl-12 pr-4 py-3 text-sm border border-gray-600 bg-gray-800/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm hover:border-blue-500/50"
+        />
+      </div>
+      
+      <button
+        onClick={processRepo}
+        disabled={!repoUrl.trim()}
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-lg transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-blue-500/25"
+      >
+        <Zap className="h-4 w-4" />
+        <span>Generate Assistant</span>
+      </button>
+    </div>
+
+    {/* Join Existing Session */}
+    <div className="space-y-4 p-6 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+      <div className="flex items-center space-x-2 mb-4">
+        <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+          <MessageSquare className="h-5 w-5 text-blue-400" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Join Existing Session</h3>
+          <p className="text-xs text-gray-400">Continue with a session ID</p>
+        </div>
+      </div>
+      
+      <div className="relative group">
+        <Hash className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 group-hover:text-blue-400 transition-colors duration-300" />
+        <input
+          type="text"
+          value={sessionId}
+          onChange={(e) => setSessionId(e.target.value)}
+          placeholder="Enter session ID"
+          className="w-full pl-12 pr-4 py-3 text-sm border border-gray-600 bg-gray-800/50 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 backdrop-blur-sm hover:border-blue-500/50"
+        />
+      </div>
+      
+      <button
+        onClick={joinSession}
+        disabled={!sessionId.trim()}
+        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-3 px-6 rounded-lg transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-blue-500/25"
+      >
+        <ArrowRight className="h-4 w-4" />
+        <span>Join Session</span>
+      </button>
+    </div>
+  </div>
+  
+  <p className="text-sm text-gray-400 mt-6 text-center animate-fade-in-up">
+    Your repository will be analyzed securely. We don't store your code permanently.
+  </p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
         </div>
       </div>
 
@@ -374,5 +484,5 @@ Would you like me to show you the specific implementation details?</div>
         .animate-typing { animation: typing 2s steps(40, end); }
       `}</style>
     </div>
-  );
+  ));
 }

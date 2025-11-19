@@ -1,16 +1,33 @@
 import { Send, Bot, User, Code, MessageSquare, RotateCcw, Settings, Github } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import MarkdownLoader from '../components/markdownLoader';
+import { useNavigate, useParams } from 'react-router-dom';
 
-export default function ChatPage({goingOut, chat, messages, setMessages}) {
+export default function ChatPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const navigator = useNavigate()
+  const { sessionId } = useParams()
+
+  const [messages, setMessages] = useState([
+      {
+        id: 1,
+        type: 'bot',
+        content: "Hi! I'm your CodeRAG AI assistant. I've analyzed your repository and I'm ready to help you understand your codebase. What would you like to know?",
+        timestamp: new Date()
+      }
+    ]);
+
 
   useEffect(() => {
-    confirm("Your session expires in 15 minutes, and it will delete all your repo files")
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    if(!uuidRegex.test(sessionId)){
+       alert("Please enter a valid session id")
+       navigator("/")
+    }
     setIsVisible(true);
     inputRef.current?.focus();
   }, []);
@@ -18,6 +35,32 @@ export default function ChatPage({goingOut, chat, messages, setMessages}) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+
+  const chat = async (query) => {
+    const url = `${import.meta.env.VITE_SERVER_URL}/api/retreive`
+
+    try {
+        const result = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ session_id: sessionId, query: query })
+        })
+        const res = await result.json();
+        if (result.ok && res.status === "success") {
+            console.log("chat responded", res.llm_response);
+            return res.llm_response;
+          } else {
+            console.error("Error processing repo:", res);
+            alert("Please try again or contact with the maintainer!!!");
+          }
+      } catch (error) {
+        console.error("Network error:", error);
+        alert("Server not reachable!");
+      }
+  }
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -90,7 +133,6 @@ export default function ChatPage({goingOut, chat, messages, setMessages}) {
               </div>
               <div onClick={() => goingOut()} >
                 <h1 className="text-xl font-bold text-white">CodeRAG AI Chat</h1>
-                <p className="text-sm text-gray-400">Chatting with: user/repository</p>
               </div>
             </div>
             
@@ -104,12 +146,12 @@ export default function ChatPage({goingOut, chat, messages, setMessages}) {
               >
                 <RotateCcw className="h-5 w-5" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-300 hover:scale-110" title="Settings">
+              {/* <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-300 hover:scale-110" title="Settings">
                 <Settings className="h-5 w-5" />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-300 hover:scale-110" title="Repository">
+              </button> */}
+              <a href='https://github.com/shivamsahu-tech/coderag-ai' target='_blank' className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all duration-300 hover:scale-110" title="Repository">
                 <Github className="h-5 w-5" />
-              </button>
+              </a>
             </div>
           </div>
         </div>
