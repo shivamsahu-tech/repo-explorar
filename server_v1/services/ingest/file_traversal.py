@@ -44,7 +44,7 @@ def extract_all_nodes(repo_path: str) -> List[Dict]:
     root_node_id = f"{repo_path}:ROOT"
     root_node = make_base_node(
         node_id=root_node_id,
-        name="ROOT",  # Just filename
+        name="ROOT", 
         ast_type="ROOT",
         file_path=repo_path,
         language="",
@@ -74,7 +74,9 @@ def extract_all_nodes(repo_path: str) -> List[Dict]:
                 
                 logger.info(f"Processing {relative_path}...")
                 
+                # Extract all nodes from this
                 nodes = extract_nodes_from_file(file_path, language, root_node_id)
+
                 if len(nodes) > 0:
                     all_nodes.extend(nodes)
             
