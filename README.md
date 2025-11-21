@@ -195,23 +195,22 @@ def process_payment(order):
 - Siblings → Related functions in same file
 
 ---
-
 ## 📸 Screenshots
 
 <div align="center">
 
 ### 🖥️ Session Selection
-<img src="https://drive.google.com/file/d/1kKo6yMc2pFehNXI93tLOupqFd_AL2hxI/view?usp=drive_link" width="800" alt="Session Management">
+<img src="https://drive.google.com/uc?export=view&id=1--0We31BvzXLhx_sifBZ__dBRctSSGsf" width="800" alt="Session Management">
 
 *Choose to create new session or join existing conversation*
 
 ### 💬 Context-Aware Chat
-<img src="https://drive.google.com/file/d/1kKo6yMc2pFehNXI93tLOupqFd_AL2hxI/view?usp=drive_link" width="800" alt="Chat Interface">
+<img src="https://drive.google.com/uc?export=view&id=1Jg3peCkxFCnmJ9jsUeyO2__zrr8KcHED" width="800" alt="Chat Interface">
 
 *Natural conversation with full dependency context*
 
 ### 🔍 Neo4j Dependency Graph
-<img src="https://drive.google.com/file/d/1kKo6yMc2pFehNXI93tLOupqFd_AL2hxI/view?usp=drive_link" width="800" alt="Graph Visualization">
+<img src="https://drive.google.com/uc?export=view&id=1kKo6yMc2pFehNXI93tLOupqFd_AL2hxI" width="800" alt="Graph Visualization">
 
 *Visual representation of code relationships*
 
